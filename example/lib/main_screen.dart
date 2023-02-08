@@ -62,7 +62,6 @@ class _MainScreenState extends State<MainScreen> {
                         printer.imageRaster(img!);
                         printer.feed(1);
                         printer.disconnect();
-                        WebcontentConverter.logger.info("bytes.length ${bytes.length}");
                       }
                     },
                   ),

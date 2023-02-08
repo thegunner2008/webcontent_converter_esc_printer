@@ -8,7 +8,6 @@ import 'dart:math';
 import 'dart:ui' as ui;
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
-import 'package:easy_logger/easy_logger.dart';
 import 'package:flutter/services.dart' show MethodChannel, rootBundle;
 import 'package:flutter/widgets.dart';
 import 'package:js/js.dart';
@@ -38,24 +37,6 @@ class WebcontentConverter {
     final String? version = await _channel.invokeMethod('getPlatformVersion');
     return version;
   }
-
-  /// ## `WebcontentConverter.logger`
-  /// `allow to pretty text`
-  /// #### Example:
-  /// ```
-  /// WebcontentConverter.logger('Your log text', level: LevelMessages.info);
-  /// ```
-  static final logger = EasyLogger(
-    name: 'webcontent_converter',
-    defaultLevel: LevelMessages.debug,
-    enableBuildModes: [BuildMode.debug, BuildMode.profile, BuildMode.release],
-    enableLevels: [
-      LevelMessages.debug,
-      LevelMessages.info,
-      LevelMessages.error,
-      LevelMessages.warning
-    ],
-  );
 
   static Future<void> ensureInitialized({
     String? executablePath,
@@ -106,7 +87,6 @@ class WebcontentConverter {
         scale: scale,
       );
     } on Exception catch (e) {
-      WebcontentConverter.logger.error("[method:filePathToImage]: $e");
       throw Exception("Error: $e");
     }
     return result;
@@ -130,7 +110,6 @@ class WebcontentConverter {
         scale: scale,
       );
     } on Exception catch (e) {
-      WebcontentConverter.logger.error("[method:webUriToImage]: $e");
       throw Exception("Error: $e");
     }
     return result;
@@ -187,7 +166,6 @@ class WebcontentConverter {
         executablePath: executablePath,
       );
     } on Exception catch (e) {
-      WebcontentConverter.logger.error("[method:filePathToPdf]: $e");
       throw Exception("Error: $e");
     }
     return result;
@@ -214,7 +192,6 @@ class WebcontentConverter {
         executablePath: executablePath,
       );
     } on Exception catch (e) {
-      WebcontentConverter.logger.error("[method:webUriToImage]: $e");
       throw Exception("Error: $e");
     }
     return result;
@@ -326,7 +303,6 @@ class WebcontentConverter {
 
       return Future.value(true);
     } on Exception catch (e) {
-      WebcontentConverter.logger.error("[method:printPreview]: $e");
       return Future.value(false);
     }
   }

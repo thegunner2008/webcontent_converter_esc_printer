@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:typed_data';
-import 'package:easy_logger/easy_logger.dart';
 import 'package:flutter/services.dart' show MethodChannel;
 import 'package:flutter/widgets.dart';
 import 'package:puppeteer/puppeteer.dart' as pp;
@@ -18,24 +17,6 @@ class WebcontentConverter {
     final String? version = await _channel.invokeMethod('getPlatformVersion');
     return version;
   }
-
-  /// ## `WebcontentConverter.logger`
-  /// `allow to pretty text`
-  /// #### Example:
-  /// ```
-  /// WebcontentConverter.logger('Your log text', level: LevelMessages.info);
-  /// ```
-  static final logger = EasyLogger(
-    name: 'webcontent_converter',
-    defaultLevel: LevelMessages.debug,
-    enableBuildModes: [BuildMode.debug, BuildMode.profile, BuildMode.release],
-    enableLevels: [
-      LevelMessages.debug,
-      LevelMessages.info,
-      LevelMessages.error,
-      LevelMessages.warning
-    ],
-  );
 
   static Future<void> ensureInitialized({
     String? executablePath,

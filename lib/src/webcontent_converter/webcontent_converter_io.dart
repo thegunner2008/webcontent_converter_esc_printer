@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io' as io;
-import 'package:easy_logger/easy_logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
@@ -54,35 +53,14 @@ class WebcontentConverter {
           await contentToImage(content: content ?? Demo.getReceiptContent());
     }
 
-    WebcontentConverter.logger.debug('webcontent converter initialized');
   }
 
   static Future<void> deinitWebcontentConverter({
     bool isClosePage = true,
     bool isCloseBrower = true,
   }) async {
-    WebcontentConverter.logger
-        .debug('webcontent converter deinitWebcontentConverter');
     if (isCloseBrower) await windowBrower?.close();
   }
-
-  /// ## `WebcontentConverter.logger`
-  /// `allow to pretty text`
-  /// #### Example:
-  /// ```
-  /// WebcontentConverter.logger('Your log text', level: LevelMessages.info);
-  /// ```
-  static final logger = EasyLogger(
-    name: 'webcontent_converter',
-    defaultLevel: LevelMessages.debug,
-    enableBuildModes: [BuildMode.debug, BuildMode.profile, BuildMode.release],
-    enableLevels: [
-      LevelMessages.debug,
-      LevelMessages.info,
-      LevelMessages.error,
-      LevelMessages.warning
-    ],
-  );
 
   /**
    * `IMAGE`
@@ -119,7 +97,6 @@ class WebcontentConverter {
         scale: scale,
       );
     } on Exception catch (e) {
-      WebcontentConverter.logger.error("[method:filePathToImage]: $e");
       throw Exception("Error: $e");
     }
     return result;
@@ -154,7 +131,6 @@ class WebcontentConverter {
         scale: scale,
       );
     } on Exception catch (e) {
-      WebcontentConverter.logger.error("[method:webUriToImage]: $e");
       throw Exception("Error: $e");
     }
     return result;
@@ -195,7 +171,6 @@ class WebcontentConverter {
         if (WebViewHelper.isChromeAvailable) {
           pp.Page? windowBrowserPage;
           try {
-            WebcontentConverter.logger.info("Desktop support");
 
             /// if window browser is null
             if (windowBrower == null || windowBrower?.isConnected != true) {
@@ -230,11 +205,9 @@ class WebcontentConverter {
         }
       } else {
         /// mobile method
-        WebcontentConverter.logger.info("Mobile support");
         results = await (_channel.invokeMethod('contentToImage', arguments));
       }
     } on Exception catch (e) {
-      WebcontentConverter.logger.error("[method:contentToImage]: $e");
       throw Exception("Error: $e");
     }
     return results;
@@ -280,7 +253,6 @@ class WebcontentConverter {
         executablePath: executablePath,
       );
     } on Exception catch (e) {
-      WebcontentConverter.logger.error("[method:filePathToPdf]: $e");
       throw Exception("Error: $e");
     }
     return result;
@@ -318,7 +290,6 @@ class WebcontentConverter {
         executablePath: executablePath,
       );
     } on Exception catch (e) {
-      WebcontentConverter.logger.error("[method:webUriToImage]: $e");
       throw Exception("Error: $e");
     }
     return result;
@@ -353,9 +324,6 @@ class WebcontentConverter {
       'margins': _margins.toMap(),
       'format': format.toMap(),
     };
-    WebcontentConverter.logger.info(arguments['savedPath']);
-    WebcontentConverter.logger.info(arguments['margins']);
-    WebcontentConverter.logger.info(arguments['format']);
     var result;
     try {
       if ((io.Platform.isMacOS ||
@@ -364,7 +332,6 @@ class WebcontentConverter {
           WebViewHelper.isChromeAvailable) {
         pp.Page? windowBrowserPage;
         try {
-          WebcontentConverter.logger.info("Desktop support");
 
           /// if window browser is null
           windowBrower ??= await pp.puppeteer.launch(
@@ -410,11 +377,9 @@ class WebcontentConverter {
         }
       } else {
         //mobile method
-        WebcontentConverter.logger.info("Mobile support");
         result = await _channel.invokeMethod('contentToPDF', arguments);
       }
     } on Exception catch (e) {
-      WebcontentConverter.logger.error("[method:contentToPDF]: $e");
       throw Exception("Error: $e");
     }
 
@@ -548,7 +513,6 @@ class WebcontentConverter {
             await page.evaluate('''window.print()''');
             if (autoClose) await page.close();
           } on Exception catch (e) {
-            WebcontentConverter.logger.error("[method:printPreview]: $e");
           }
         }
         page.onClose.then((value) {
@@ -557,12 +521,10 @@ class WebcontentConverter {
         return Future.value(true);
       } else {
         //mobile method
-        WebcontentConverter.logger.info("Mobile support");
         await _channel.invokeMethod('printPreview', arguments);
         return Future.value(true);
       }
     } on Exception catch (e) {
-      WebcontentConverter.logger.error("[method:printPreview]: $e");
       return Future.value(false);
     }
   }

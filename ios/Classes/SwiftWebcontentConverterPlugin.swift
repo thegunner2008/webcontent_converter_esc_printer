@@ -21,6 +21,7 @@ public class SwiftWebcontentConverterPlugin: NSObject, FlutterPlugin {
         let arguments = call.arguments as? [String: Any]
         let content = arguments!["content"] as? String
         var duration = arguments!["duration"] as? Double
+        let widthScale = CGFloat(arguments!["width"] as? Int ?? 0)
         if(duration==nil){ duration = 2000.0}
         switch method {
         case "contentToImage":
@@ -32,7 +33,7 @@ public class SwiftWebcontentConverterPlugin: NSObject, FlutterPlugin {
             urlObservation = webView.observe(\.isLoading, changeHandler: { (webView, change) in
                 DispatchQueue.main.asyncAfter(deadline: .now() + (duration!/10000) ) {
                     print("height = \(self.webView.scrollView.contentSize.height)")
-                    print("width = \(self.webView.scrollView.contentSize.width)")
+                    print("widthScale = \(widthScale) width = \(self.webView.scrollView.contentSize.width)")
                     if #available(iOS 11.0, *) {
                         let configuration = WKSnapshotConfiguration()
                         var size = self.webView.scrollView.contentSize
@@ -41,7 +42,7 @@ public class SwiftWebcontentConverterPlugin: NSObject, FlutterPlugin {
                         configuration.rect = CGRect(origin: .zero, size: size)
                         self.webView.snapshotView(afterScreenUpdates: true)
                         self.webView.takeSnapshot(with: configuration) { (image, error) in
-                            guard let data = image!.jpegData(compressionQuality: 1) else {
+                            guard let data = self.resizeImage(image: image!, targetWidth: widthScale)!.jpegData(compressionQuality: 1) else {
                                 result( bytes )
                                 self.dispose()
                                 return
@@ -56,7 +57,7 @@ public class SwiftWebcontentConverterPlugin: NSObject, FlutterPlugin {
                     } else if #available(iOS 9.0, *) {
                         
                         let image =  self.webView.snapshot()
-                        guard let data = image!.jpegData(compressionQuality: 1) else {
+                        guard let data = self.resizeImage(image: image!, targetWidth: widthScale)!.jpegData(compressionQuality: 1) else {
                             result( bytes )
                             self.dispose()
                             return
@@ -174,6 +175,21 @@ public class SwiftWebcontentConverterPlugin: NSObject, FlutterPlugin {
         let pdfPath = docDirectoryPath.appendingPathComponent("invoice.pdf")
         print("pdfPath.absoluteString \(pdfPath.absoluteString)")
         return pdfPath.path
+    }
+    
+    func resizeImage(image: UIImage, targetWidth: CGFloat) -> UIImage? {
+        let size = image.size
+        // Figure out what our orientation is, and use that to form the rectangle
+        var newSize = CGSize(width: targetWidth, height: size.height * targetWidth / size.width)
+        // This is the rect that we've calculated out and this is what is actually used below
+        let rect = CGRect(origin: .zero, size: newSize)
+        // Actually do the resizing to the rect using the ImageContext stuff
+        UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
+        image.draw(in: rect)
+        let newImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        
+        return newImage
     }
 }
 

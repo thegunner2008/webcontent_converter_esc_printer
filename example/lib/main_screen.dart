@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:esc_pos_printer/esc_pos_printer.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +16,7 @@ class MainScreen extends StatefulWidget {
 
 class MainScreenState extends State<MainScreen> {
   String ipAddress = '172.20.177.250';
-  String _htmlText = Demo.getReceiptContent();
+  String _htmlText = Demo.getShortReceiptContent();
 
   @override
   Widget build(BuildContext context) {
@@ -42,13 +44,31 @@ class MainScreenState extends State<MainScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
+                  SizedBox(
+                    width: 100,
+                    height: 400,
+                    child: FutureBuilder(
+                        future: WebcontentConverter.contentToImage(
+                          content: _htmlText,
+                          executablePath: WebViewHelper.executablePath(),
+                          width: 558,
+                        ),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasData) {
+                            return Image.memory(snapshot.data as Uint8List);
+                          }
+                          return const SizedBox();
+                        }),
+                  ),
                   ElevatedButton(
                     child: const Text('Print from HTML'),
                     onPressed: () async {
+                      var executablePath =
+                      WebViewHelper.isChromeAvailable ? WebViewHelper.executablePath() : null;
                       var bytes = await WebcontentConverter.contentToImage(
                         content: _htmlText,
-                        executablePath: WebViewHelper.executablePath(),
-                        scale: 3,
+                        executablePath: executablePath,
+                        // scale: 3,
                         width: 558,
                       );
 
@@ -63,23 +83,6 @@ class MainScreenState extends State<MainScreen> {
                         printer.disconnect();
                       }
                     },
-                  ),
-                  ElevatedButton(
-                    child: const Text('Print from URL'),
-                    onPressed: () async {
-                      // if (_formKey.currentState.validate()) {
-                      //   _formKey.currentState.save();
-                      //   var response = await HttpClient().getUrl(Uri.parse(_htmlText));
-                      //   var document = parse(await response.transform(utf8.decoder).join());
-                      //   await Printing.layoutPdf(
-                      //     onLayout: (_) async => document.documentElement.outerHtml.codeUnits,
-                      //   );
-                      // }
-                    },
-                  ),
-                  ElevatedButton(
-                    child: const Text('HTML to PDF'),
-                    onPressed: () async {},
                   ),
                 ],
               ),

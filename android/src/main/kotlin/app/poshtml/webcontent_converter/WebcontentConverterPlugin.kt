@@ -6,16 +6,15 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Picture
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.print.PdfPrinter
 import android.print.PrintAttributes
 import android.print.PrintManager
+import android.view.View
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.annotation.NonNull
-import androidx.annotation.RequiresApi
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -23,9 +22,11 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import org.json.JSONArray
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
+import kotlin.math.absoluteValue
 
 /** WebcontentConverterPlugin */
 class WebcontentConverterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
@@ -47,6 +48,8 @@ class WebcontentConverterPlugin : FlutterPlugin, MethodCallHandler, ActivityAwar
     }
 
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
+        print("\n start method call")
+
         val method = call.method
         val arguments = call.arguments as Map<*, *>
         val content = arguments["content"] as String
@@ -58,7 +61,6 @@ class WebcontentConverterPlugin : FlutterPlugin, MethodCallHandler, ActivityAwar
 
         when (method) {
             "contentToImage" -> {
-                print("\n activity $activity")
                 webView = WebView(this.context)
                 val dwidth = this.activity.window.windowManager.defaultDisplay.width
                 val dheight = this.activity.window.windowManager.defaultDisplay.height
@@ -67,25 +69,34 @@ class WebcontentConverterPlugin : FlutterPlugin, MethodCallHandler, ActivityAwar
                 val scale =
                     (this.context.resources.displayMetrics.widthPixels / this.context.resources.displayMetrics.density).toInt()
                 webView.setInitialScale(scale)
+                webView.settings.javaScriptEnabled = true
+                webView.settings.javaScriptCanOpenWindowsAutomatically = true
+                WebView.enableSlowWholeDocumentDraw()
 
                 webView.webViewClient = object : WebViewClient() {
                     override fun onPageFinished(view: WebView, url: String) {
                         super.onPageFinished(view, url)
 
+                        val durationMs = (dheight / 1000 ).toInt() * 200 ; /// delay 300 ms for every dheight 2000
+
                         Handler(Looper.getMainLooper()).postDelayed({
-                            val picture = webView.capturePicture()
-                            if (picture.width > 0 && picture.height > 0) {
-                                val data = picture.toBitmap(width ?: 0);
+                            webView.evaluateJavascript("(function() { return [document.body.offsetWidth, document.body.offsetHeight]; })();"){
+                                val xy = JSONArray(it)
+                                val offsetWidth = xy[0].toString();
+                                var offsetHeight = xy[1].toString();
+                                if( offsetHeight.toInt() < 1000 ){
+                                    offsetHeight = (xy[1].toString().toInt() + 20).toString();
+                                }
+                                val data = webView.toBitmap(offsetWidth.toDouble(), offsetHeight.toDouble(), width ?: 0)
                                 if (data != null) {
                                     val bytes = data.toByteArray()
                                     result.success(bytes)
-                                    return@postDelayed
                                 }
                             }
-                            result.error("UNAVAILABLE", "Have no data", null)
-                        }, 300)
+                        }, durationMs.toLong())
                     }
                 }
+
             }
             "contentToPDF" -> {
                 print("\n activity $activity")
@@ -99,7 +110,6 @@ class WebcontentConverterPlugin : FlutterPlugin, MethodCallHandler, ActivityAwar
                 webView.settings.useWideViewPort = true
                 webView.settings.javaScriptCanOpenWindowsAutomatically = true
                 webView.settings.loadWithOverviewMode = true
-                print("\n=======> enabled scrolled <=========")
                 WebView.enableSlowWholeDocumentDraw()
 
                 webView.webViewClient = object : WebViewClient() {
@@ -107,10 +117,6 @@ class WebcontentConverterPlugin : FlutterPlugin, MethodCallHandler, ActivityAwar
                         super.onPageFinished(view, url)
 
                         Handler().postDelayed({
-                            print("\nOS Version: ${android.os.Build.VERSION.SDK_INT}")
-                            print("\n ================ webview completed ==============")
-                            print("\n scroll delayed ${webView.scrollBarFadeDuration}")
-
                             webView.exportAsPdfFromWebView(
                                 savedPath!!,
                                 format!!,
@@ -270,7 +276,7 @@ fun Double.convertFromInchesToInt(): Int {
     return this.toInt()
 }
 
-fun Picture.toBitmap(widthScale: Int): Bitmap? {
+fun Picture.toBitmap(widthScale: Int, heightCut: Int): Bitmap? {
     val bmp = Bitmap.createBitmap(this.width, this.height, Bitmap.Config.RGB_565)
     val canvas = Canvas(bmp)
     canvas.drawColor(Color.WHITE)
@@ -279,6 +285,20 @@ fun Picture.toBitmap(widthScale: Int): Bitmap? {
 
     val heightScale = this.height * widthScale / this.width
     return Bitmap.createScaledBitmap(bmp, widthScale, heightScale, true)
+}
+
+fun WebView.toBitmap(offsetWidth: Double, offsetHeight: Double, widthScale: Int): Bitmap? {
+    if (offsetHeight > 0 && offsetWidth > 0) {
+        val width1 = (offsetWidth * this.scale).absoluteValue.toInt()
+        val height1 = (offsetHeight * this.scale).absoluteValue.toInt()
+        this.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED), View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+        val bitmap = Bitmap.createBitmap(width1, height1, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        this.draw(canvas)
+        val heightScale = height1 * widthScale / width1
+        return Bitmap.createScaledBitmap(bitmap, widthScale, heightScale, true)
+    }
+    return null
 }
 
 fun Bitmap.toByteArray(): ByteArray {

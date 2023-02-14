@@ -1,21 +1,20 @@
 import 'package:esc_pos_printer/esc_pos_printer.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:image/image.dart' as print_img;
 import 'package:webcontent_converter_esc_printer/demo.dart';
 import 'package:webcontent_converter_esc_printer/webcontent_converter_esc_printer.dart';
-
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
   @override
-  _MainScreenState createState() => _MainScreenState();
+  MainScreenState createState() => MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
-  String _htmlText = Demo.getShortReceiptContent();
+class MainScreenState extends State<MainScreen> {
+  String ipAddress = '172.20.177.250';
+  String _htmlText = Demo.getReceiptContent();
 
   @override
   Widget build(BuildContext context) {
@@ -54,12 +53,12 @@ class _MainScreenState extends State<MainScreen> {
                       );
 
                       final printer =
-                      NetworkPrinter(PaperSize.mm80, await CapabilityProfile.load());
-                      final connectPrinter = await printer.connect('172.20.177.250', port: 9100);
+                          NetworkPrinter(PaperSize.mm80, await CapabilityProfile.load());
+                      final connectPrinter = await printer.connect(ipAddress, port: 9100);
 
                       if (bytes.isNotEmpty) {
                         final img = print_img.decodeImage(bytes);
-                        printer.imageRaster(img!);
+                        printer.image(img!);
                         printer.feed(1);
                         printer.disconnect();
                       }

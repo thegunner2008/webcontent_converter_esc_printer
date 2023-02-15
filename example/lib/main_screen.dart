@@ -68,7 +68,6 @@ class MainScreenState extends State<MainScreen> {
                       var bytes = await WebcontentConverter.contentToImage(
                         content: _htmlText,
                         executablePath: executablePath,
-                        // scale: 3,
                         width: 558,
                       );
 
@@ -76,7 +75,7 @@ class MainScreenState extends State<MainScreen> {
                           NetworkPrinter(PaperSize.mm80, await CapabilityProfile.load());
                       final connectPrinter = await printer.connect(ipAddress, port: 9100);
 
-                      if (bytes.isNotEmpty) {
+                      if (bytes.isNotEmpty && connectPrinter == PosPrintResult.success) {
                         final img = print_img.decodeImage(bytes);
                         printer.image(img!);
                         printer.feed(1);

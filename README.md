@@ -1,39 +1,54 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/guides/libraries/writing-package-pages).
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-library-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/developing-packages).
--->
+## webcontent_converter_for_esc_printer
 
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
-
-## Features
-
-TODO: List what your package can do. Maybe include images, gifs, or videos.
-
-## Getting started
-
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+This package is a converter image for ESC/POS printer, to PDF from html, url.
+Support multiple platform (Android, iOS, Web).
 
 ## Usage
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
+
+- contentToImage({ String html, double duration, String? executablePath, int scale, int width, }): convert from html with fixed width. This function will return Uint8List Image
+
+- webUriToImage(String uri, double duration) : uri is web uri(url) and duration is delay time. This function will return Uint8List Image
+
 
 ```dart
-const like = 'sample';
+displayImage:  
+  FutureBuilder(
+        future: WebcontentConverter.contentToImage(
+          content: _htmlText,
+          executablePath: WebViewHelper.executablePath(),
+          width: 558,
+        ),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return Image.memory(snapshot.data as Uint8List);
+          }
+          return const SizedBox();
+        }),
+  )
+
+printImage:
+    final ipAddress = '<YOUR_PRINTER_IP>'
+    final _html ='<YOUR_HTML_CONTENT>'
+    final executablePath = WebViewHelper.isChromeAvailable ? WebViewHelper.executablePath() : null;
+    var bytes = await WebcontentConverter.contentToImage(
+        content: _html,
+        executablePath: executablePath,
+        width: 558,
+    );
+    
+    final printer = NetworkPrinter(PaperSize.mm80, await CapabilityProfile.load());
+    final connectPrinter = await printer.connect(ipAddress, port: 9100);
+
+    if (bytes.isNotEmpty && connectPrinter == PosPrintResult.success) {
+        final img = print_img.decodeImage(bytes);
+        printer.image(img!);
+        printer.feed(1);
+        printer.disconnect();
+    }
 ```
 
 ## Additional information
 
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.

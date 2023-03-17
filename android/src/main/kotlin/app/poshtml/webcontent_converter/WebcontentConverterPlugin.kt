@@ -22,6 +22,8 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import net.posprinter.utils.BitmapToByteData
+import net.posprinter.utils.DataForSendToPrinterTSC
 import org.json.JSONArray
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -58,6 +60,7 @@ class WebcontentConverterPlugin : FlutterPlugin, MethodCallHandler, ActivityAwar
         val margins = arguments["margins"] as Map<String, Double>?
         val format = arguments["format"] as Map<String, Double>?
         val width = arguments["width"] as Int?
+        val height = arguments["height"] as Int?
 
         when (method) {
             "contentToImage" -> {
@@ -90,6 +93,45 @@ class WebcontentConverterPlugin : FlutterPlugin, MethodCallHandler, ActivityAwar
                                 val data = webView.toBitmap(offsetWidth.toDouble(), offsetHeight.toDouble(), width ?: 0)
                                 if (data != null) {
                                     val bytes = data.toByteArray()
+                                    result.success(bytes)
+                                }
+                            }
+                        }, durationMs.toLong())
+                    }
+                }
+
+            }
+            "contentToTSCdata" -> {
+                webView = WebView(this.context)
+                val dwidth = this.activity.window.windowManager.defaultDisplay.width
+                val dheight = this.activity.window.windowManager.defaultDisplay.height
+                webView.layout(0, 0, dwidth, dheight)
+                webView.loadDataWithBaseURL(null, content, "text/HTML", "UTF-8", null)
+                val scale =
+                    (this.context.resources.displayMetrics.widthPixels / this.context.resources.displayMetrics.density).toInt()
+                webView.setInitialScale(scale)
+                webView.settings.javaScriptEnabled = true
+                webView.settings.javaScriptCanOpenWindowsAutomatically = true
+                WebView.enableSlowWholeDocumentDraw()
+
+                webView.webViewClient = object : WebViewClient() {
+                    override fun onPageFinished(view: WebView, url: String) {
+                        super.onPageFinished(view, url)
+
+                        val durationMs = (dheight / 1000 ).toInt() * 200 ; /// delay 300 ms for every dheight 2000
+
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            webView.evaluateJavascript("(function() { return [document.body.offsetWidth, document.body.offsetHeight]; })();"){
+                                val xy = JSONArray(it)
+                                val offsetWidth = xy[0].toString();
+                                var offsetHeight = xy[1].toString();
+                                if( offsetHeight.toInt() < 1000 ){
+                                    offsetHeight = (xy[1].toString().toInt() + 20).toString();
+                                }
+                                val bmp = webView.toBitmap(offsetWidth.toDouble(), offsetHeight.toDouble(), (width ?: 0) * 19 / 20)
+
+                                if (bmp != null) {
+                                    val bytes = DataForSendToPrinterTSC.bitmap(bmp.width / 40, bmp.height / 40, 0, bmp, BitmapToByteData.BmpType.Dithering)
                                     result.success(bytes)
                                 }
                             }

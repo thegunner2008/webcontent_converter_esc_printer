@@ -12,6 +12,7 @@ import 'package:puppeteer/puppeteer.dart' as pp;
 import '../../demo.dart';
 import '../../page.dart';
 import '../../webview_helper.dart';
+import 'data_printer_tsc.dart';
 
 /// instance of window browser
 pp.Browser? windowBrower;
@@ -19,6 +20,7 @@ Uint8List preloadBytes = Uint8List.fromList([]);
 
 /// [WebcontentConverter] will convert html, html file, web uri, into raw bytes image or pdf file
 class WebcontentConverter {
+
   static const MethodChannel _channel =
       const MethodChannel('webcontent_converter');
 
@@ -206,6 +208,35 @@ class WebcontentConverter {
       } else {
         /// mobile method
         results = await (_channel.invokeMethod('contentToImage', arguments));
+      }
+    } on Exception catch (e) {
+      throw Exception("Error: $e");
+    }
+    return results;
+  }
+
+  static Future<Uint8List> contentToTSCdata({
+    required String content,
+    double duration: 2000,
+    String? executablePath,
+    int width = 0,
+    int height = 0,
+  }) async {
+    final Map<String, dynamic> arguments = {
+      'content': content,
+      'duration': duration,
+      'width': width,
+      'height': height,
+    };
+
+    Uint8List results = Uint8List.fromList([]);
+
+    try {
+      if (io.Platform.isMacOS || io.Platform.isLinux || io.Platform.isWindows) {
+          //TODO: implement later
+      } else {
+        /// mobile method
+        results = await (_channel.invokeMethod('contentToTSCdata', arguments));
       }
     } on Exception catch (e) {
       throw Exception("Error: $e");

@@ -73,6 +73,17 @@ class WebcontentConverter {
     return Future.value(Uint8List.fromList([]));
   }
 
+  static Future<Uint8List> contentToTSCdata({
+    required String content,
+    double duration: 2000,
+    String? executablePath,
+    int width = 0,
+    int height = 0,
+  })async {
+    UnimplementedError('contentToImage');
+    return Future.value(Uint8List.fromList([]));
+  }
+
   static Future<String?> filePathToPdf({
     required String path,
     double duration: 2000,
